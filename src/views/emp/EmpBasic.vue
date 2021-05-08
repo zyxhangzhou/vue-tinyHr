@@ -14,12 +14,17 @@
         </el-button>
       </div>
       <div>
-        <el-button type="success" plain>
-          <i class="fa fa-level-down" aria-hidden="true"></i>
-          导入数据
-        </el-button>
-        <el-button type="success" plain>
-          <i class="fa fa-level-up" aria-hidden="true"></i>
+        <el-upload
+            :show-file-list="false"
+            :before-upload="beforeUpload"
+            :on-success="onSuccess"
+            :on-error="onError"
+            :disabled="importDataDisabled"
+            style="display: inline-flex; margin-right: 9px;"
+            action="/emp/basic/import">
+          <el-button :disabled="importDataDisabled" type="success" :icon="importDataBtnIcon" plain>{{ importDataBtnText }}</el-button>
+        </el-upload>
+        <el-button type="success" icon="el-icon-download" @click="exportData" plain>
           导出数据
         </el-button>
         <el-button type="primary" icon="el-icon-plus" @click="showAddEmpView" plain>
@@ -154,6 +159,18 @@
             align="center"
             width="50"
             label="最高学历">
+        </el-table-column>
+        <el-table-column
+            prop="specialty"
+            align="center"
+            width="120"
+            label="专业">
+        </el-table-column>
+        <el-table-column
+            prop="school"
+            align="center"
+            width="140"
+            label="毕业院校">
         </el-table-column>
         <el-table-column
             fixed="right"
@@ -426,6 +443,9 @@ export default {
   data() {
     return {
       title: '',
+      importDataBtnText: '导入数据',
+      importDataBtnIcon: 'el-icon-upload2',
+      importDataDisabled: false,
       allDeps: [],
       emps: [],
       total: 0,
@@ -489,78 +509,44 @@ export default {
         label: 'name'
       },
       rules: {
-        name: [{ required: true, message: "请输入用户名", trigger: "blur" }],
-        gender: [{ required: true, message: "请输入性别", trigger: "blur" }],
-        birthday: [
-          { required: true, message: "请输入出生日期", trigger: "blur" },
-        ],
-        idCard: [
-          { required: true, message: "请输入身份证号码", trigger: "blur" },
+        name: [{required: true, message: "请输入用户名", trigger: "blur"}],
+        gender: [{required: true, message: "请输入性别", trigger: "blur"}],
+        birthday: [{required: true, message: "请输入出生日期", trigger: "blur"},],
+        idCard: [{required: true, message: "请输入身份证号码", trigger: "blur"},
           {
             pattern: /(^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$)|(^[1-9]\d{5}\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{2}$)/,
             message: "身份证号码格式不正确",
             trigger: "blur",
           },
         ],
-        wedlock: [
-          { required: true, message: "请输入婚姻状况", trigger: "blur" },
-        ],
-        nationId: [{ required: true, message: "请输入您组", trigger: "blur" }],
-        nativePlace: [
-          { required: true, message: "请输入籍贯", trigger: "blur" },
-        ],
-        politicId: [
-          { required: true, message: "请输入政治面貌", trigger: "blur" },
-        ],
-        email: [
-          { required: true, message: "请输入邮箱地址", trigger: "blur" },
+        wedlock: [{required: true, message: "请输入婚姻状况", trigger: "blur"},],
+        nationId: [{required: true, message: "请输入您组", trigger: "blur"}],
+        nativePlace: [{required: true, message: "请输入籍贯", trigger: "blur"},],
+        politicId: [{required: true, message: "请输入政治面貌", trigger: "blur"},],
+        email: [{required: true, message: "请输入邮箱地址", trigger: "blur"},
           {
             type: "email",
             message: "邮箱格式不正确",
             trigger: "blur",
           },
         ],
-        phone: [{ required: true, message: "请输入电话号码", trigger: "blur" }],
-        address: [
-          { required: true, message: "请输入员工地址", trigger: "blur" },
-        ],
-        departmentId: [
-          { required: true, message: "请输入部门名称", trigger: "blur" },
-        ],
-        jobLevelId: [
-          { required: true, message: "请输入职称", trigger: "blur" },
-        ],
-        posId: [{ required: true, message: "请输入职位", trigger: "blur" }],
-        engageForm: [
-          { required: true, message: "请输入聘用形式", trigger: "blur" },
-        ],
-        tiptopDegree: [
-          { required: true, message: "请输入学历", trigger: "blur" },
-        ],
-        specialty: [{ required: true, message: "请输入专业", trigger: "blur" }],
-        school: [
-          { required: true, message: "请输入毕业院校", trigger: "blur" },
-        ],
-        beginDate: [
-          { required: true, message: "请输入入职日期", trigger: "blur" },
-        ],
-        workID: [{ required: true, message: "请输入工号", trigger: "blur" }],
-        contractTerm: [
-          { required: true, message: "请输入合同期限", trigger: "blur" },
-        ],
-        conversionTime: [
-          { required: true, message: "请输入转正日期", trigger: "blur" },
-        ],
-        notworkDate: [
-          { required: true, message: "请输入离职日期", trigger: "blur" },
-        ],
-        beginContract: [
-          { required: true, message: "请输入合同起始日期", trigger: "blur" },
-        ],
-        endContract: [
-          { required: true, message: "请输入合同结束日期", trigger: "blur" },
-        ],
-        workAge: [{ required: true, message: "请输入工龄", trigger: "blur" }],
+        phone: [{required: true, message: "请输入电话号码", trigger: "blur"}],
+        address: [{required: true, message: "请输入员工地址", trigger: "blur"},],
+        departmentId: [{required: true, message: "请输入部门名称", trigger: "blur"},],
+        jobLevelId: [{required: true, message: "请输入职称", trigger: "blur"},],
+        posId: [{required: true, message: "请输入职位", trigger: "blur"}],
+        engageForm: [{required: true, message: "请输入聘用形式", trigger: "blur"},],
+        tiptopDegree: [{required: true, message: "请输入学历", trigger: "blur"},],
+        specialty: [{required: true, message: "请输入专业", trigger: "blur"}],
+        school: [{required: true, message: "请输入毕业院校", trigger: "blur"},],
+        beginDate: [{required: true, message: "请输入入职日期", trigger: "blur"},],
+        workID: [{required: true, message: "请输入工号", trigger: "blur"}],
+        contractTerm: [{required: true, message: "请输入合同期限", trigger: "blur"},],
+        conversionTime: [{required: true, message: "请输入转正日期", trigger: "blur"},],
+        notworkDate: [{required: true, message: "请输入离职日期", trigger: "blur"},],
+        beginContract: [{required: true, message: "请输入合同起始日期", trigger: "blur"},],
+        endContract: [{required: true, message: "请输入合同结束日期", trigger: "blur"},],
+        workAge: [{required: true, message: "请输入工龄", trigger: "blur"}],
       },
     }
   },
@@ -569,6 +555,25 @@ export default {
     this.initData()
   },
   methods: {
+    onError(err, file, fileList) {
+      this.importDataBtnText = '导入数据'
+      this.importDataBtnIcon = 'el-icon-upload2'
+      this.importDataDisabled = false
+    },
+    onSuccess(resp, file, fileList) {
+      this.importDataBtnText = '导入数据'
+      this.importDataBtnIcon = 'el-icon-upload2'
+      this.importDataDisabled = false
+      this.initEmps()
+    },
+    beforeUpload() {
+      this.importDataBtnText = '正在导入...'
+      this.importDataBtnIcon = 'el-icon-loading'
+      this.importDataDisabled = true
+    },
+    exportData() {
+      window.open('/emp/basic/export', '_parent')
+    },
     emptyEmp() {
       this.emp = {
         name: "",
